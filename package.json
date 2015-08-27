@@ -1,0 +1,37 @@
+{
+  "name": "rslashimg",
+  "version": "1.0.0",
+  "description": "Download images from subreddits",
+  "main": "library.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pitaj/rslashimg"
+  },
+  "keywords": [
+    "r",
+    "slash",
+    "img",
+    "rslashimg",
+    "reddit",
+    "image",
+    "download"
+  ],
+  "author": "PitaJ",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pitaj/rslashimg/issues"
+  },
+  "homepage": "https://github.com/pitaj/rslashimg",
+  "dependencies": {
+    "gm": "^1.18.1",
+    "progress": "^1.1.8",
+    "redwrap": "^0.0.4",
+    "request": "^2.61.0"
+  },
+  "bin": {
+    "rslashimg": "bin/rslashimg.js"
+  }
+}
