@@ -27,7 +27,7 @@
   "homepage": "https://github.com/pitaj/rslashimg",
   "dependencies": {
     "gm": "^1.18.1",
-    "progress": "^1.1.8",
+    "multi-progress": "^1.0.0",
     "redwrap": "^0.0.4",
     "request": "^2.61.0"
   },

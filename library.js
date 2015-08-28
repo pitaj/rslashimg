@@ -7,13 +7,13 @@ var path = require("path");
 var reddit = require('redwrap');
 var request = require("request");
 var gm = require('gm').subClass({ imageMagick: true });
-var MultiBar = require("./multibar.js");
+var MultiProgress = require("multi-progress");
 
 var log;
 
 function download(dir, images, next){
 
-  var multi = new MultiBar(process.stderr);
+  var multi = MultiProgress(process.stderr);
 
   asyncMap(images, function(image, index, cb){
     var imageURL = image;
@@ -115,7 +115,8 @@ var rslashimg = {
     "imgur.com": function(img) {
       img.host = "i.imgur.com";
       img.pathname += ".jpg";
-      if(img.pathname.indexOf("/a/") > -1){
+      if(img.pathname.indexOf("/a/") > -1 ||
+        img.pathname.indexOf("/gallery/") > -1){
         return false;
       }
       return rslashimg.getRealURL["i.imgur.com"](img);
