@@ -18,7 +18,7 @@ function download(dir, images, next){
   asyncMap(images, function(image, index, cb){
     var imageURL = image;
 
-    var pat = path.join(dir, imageURL.pathname);
+    var pat = path.join(dir, path.basename(imageURL.pathname));
 
     var stream = fs.createWriteStream( pat );
     stream.on("error", err);
