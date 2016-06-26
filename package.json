@@ -1,6 +1,6 @@
 {
   "name": "rslashimg",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Download images from subreddits",
   "main": "library.js",
   "scripts": {
@@ -26,12 +26,19 @@
   },
   "homepage": "https://github.com/pitaj/rslashimg",
   "dependencies": {
-    "gm": "^1.18.1",
+    "async": "^2.0.0-rc.6",
+    "commander": "^2.9.0",
     "multi-progress": "^1.0.0",
     "redwrap": "^0.0.4",
-    "request": "^2.61.0"
+    "request": "^2.61.0",
+    "sharp": "^0.15.0"
   },
   "bin": {
     "rslashimg": "bin/rslashimg.js"
+  },
+  "devDependencies": {
+    "eslint": "^2.13.1",
+    "eslint-config-airbnb-base": "^3.0.1",
+    "eslint-plugin-import": "^1.9.2"
   }
 }

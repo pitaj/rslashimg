@@ -1,50 +1,48 @@
-"use strict";
+var path = require('path');
 
-var rslashimg = require("./library");
+var rslashimg = require('./library');
+var program = require('commander');
 
-var args = process.argv.splice(2);
+var subreddit;
 
-args = args.map(function(arg){
-  return arg.toLowerCase();
-});
-
-function parseArgs(args){
-  var opts = {};
-
-  var lone = false, i;
-
-  for(i = 0; i < args.length; i++){
-    if(args[i][0] === "-"){
-      i++;
-    } else {
-      lone = args[i];
-      break;
-    }
-  }
-
-  if(lone){
-    opts.subreddit = lone;
-  }
-
-  var hash = {
-    number: ["-n", "--number"],
-    width: ["-w", "--width"],
-    height: ["-h", "--height"],
-    types: ["-t", "--types"],
-    sort: ["-s", "--sort"],
-    dir: ["-s", "--dir"],
-  };
-
-  Object.keys(hash).forEach(function(key){
-    var one = hash[key][0], two = hash[key][1];
-    args.forEach(function(arg, index){
-      if(arg === one || arg === two){
-        opts[key] = args[index + 1];
-      }
-    });
-  });
-
-  return opts;
+function toInt(num) {
+  return parseInt(num, 10);
+}
+function split(str) {
+  return str.split(',');
+}
+function fullPath(relative) {
+  return path.resolve(process.cwd(), relative);
 }
 
-rslashimg.pull(parseArgs(args));
+program
+  .version('1.1.0')
+  .arguments('<subreddit>')
+  .action(function (sub) {
+    subreddit = sub;
+  });
+program
+  .description('Download pictures linked to posts from reddit')
+  .option('-n, --number <number>', 'Number of posts to scrape for images', toInt, 25)
+  .option('-w, --width <width>', 'Minimum width of images to download', toInt, 1920)
+  .option('-h, --height <height>', 'Minimum height of images to download', toInt, 1080)
+  .option('-t, --types <types>', 'Types of images to download', split, ['png', 'jpg'])
+  .option('-s, --sort <sort>', 'Sort subreddit by filter', /^(hot|new|controversial|top)$/i, 'hot')
+  .option('-d, --dir <dir>', 'Directory to save the images to', fullPath, process.cwd())
+  .parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+} else {
+  rslashimg.pull({
+    subreddit: subreddit,
+    sort: program.sort,
+    dir: program.dir,
+    width: program.width,
+    height: program.height,
+    number: program.number,
+    types: program.types,
+  });
+}
+
+// if (!program.args.length) program.help();

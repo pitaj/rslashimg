@@ -14,13 +14,11 @@ Downloads images attached to the top 25 posts of the `/r/earthporn` subreddit to
 
 #### Usage:
 
-    $ mempass [subreddit] [options]
+    $ rslashimg <subreddit> [options]
 
 `subreddit` is a required parameter specifying the subreddit to scrape for images
 
 #### Options
-
-*Note: not case-sensitive*
 
 |  Command          |  Description                            | Default
 | ----------------- | --------------------------------------- | ------------
