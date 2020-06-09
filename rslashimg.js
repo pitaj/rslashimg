@@ -1,9 +1,9 @@
-var path = require('path');
+const path = require('path');
 
-var rslashimg = require('./library');
-var program = require('commander');
+const program = require('commander');
+const rslashimg = require('./library');
 
-var subreddit;
+let subreddit;
 
 function toInt(num) {
   return parseInt(num, 10);
@@ -18,7 +18,7 @@ function fullPath(relative) {
 program
   .version('1.1.0')
   .arguments('<subreddit>')
-  .action(function (sub) {
+  .action((sub) => {
     subreddit = sub;
   });
 program
@@ -35,7 +35,7 @@ if (!process.argv.slice(2).length) {
   program.outputHelp();
 } else {
   rslashimg.pull({
-    subreddit: subreddit,
+    subreddit,
     sort: program.sort,
     dir: program.dir,
     width: program.width,

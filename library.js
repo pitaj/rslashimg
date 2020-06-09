@@ -1,24 +1,23 @@
-'use strict';
 
-var url = require('url');
-var fs = require('fs');
-var path = require('path');
+const url = require('url');
+const fs = require('fs');
+const path = require('path');
 
-var reddit = require('redwrap');
-var sharp = require('sharp');
-var request = require('request');
-var MultiProgress = require('multi-progress');
-var async = require('async');
+const reddit = require('redwrap');
+const sharp = require('sharp');
+const request = require('request');
+const Progress = require('progress');
+const MultiProgress = require('multi-progress')(Progress);
+const async = require('async');
 
-var rslashimg;
-var log;
+const log = (...args) => console.log(...args);
 
 function download(dir, images, next) {
-  var multi = new MultiProgress(process.stderr);
+  const multi = new MultiProgress(process.stderr);
 
-  async.map(images, function (imageURL, cb) {
-    var pat = path.join(dir, path.basename(imageURL.pathname));
-    var stream = fs.createWriteStream(pat);
+  async.map(images, (imageURL, cb) => {
+    const pat = path.join(dir, path.basename(imageURL.pathname));
+    const stream = fs.createWriteStream(pat);
 
     function err(error) {
       log('Failed to retrieve image', url.format(imageURL));
@@ -29,23 +28,23 @@ function download(dir, images, next) {
 
     request
       .get(url.format(imageURL))
-      .on('response', function (res) {
-        var size = parseInt(res.headers['content-length'], 10);
+      .on('response', (res) => {
+        const size = parseInt(res.headers['content-length'], 10);
 
-        var bar = multi.newBar('  downloading [:bar] :percent :etas', {
+        const bar = multi.newBar('  downloading [:bar] :percent :etas', {
           complete: '=',
           incomplete: ' ',
           width: 30,
           total: size,
         });
 
-        res.on('data', function (chunk) {
+        res.on('data', (chunk) => {
           if (bar.tick) {
             bar.tick(chunk.length);
           }
         });
 
-        res.on('end', function () {
+        res.on('end', () => {
           cb(null, pat);
         });
       })
@@ -55,7 +54,7 @@ function download(dir, images, next) {
 }
 
 function imageSize(imageFile, next) {
-  sharp(imageFile).metadata(function (err, data) {
+  sharp(imageFile).metadata((err, data) => {
     if (err) {
       next(err);
       return;
@@ -67,25 +66,30 @@ function imageSize(imageFile, next) {
   });
 }
 
-rslashimg = {
+const rslashimg = {
   getRealURL: {
-    'imgur.com': function (types, img) {
-      img.host = 'i.imgur.com';
-      img.pathname += '.jpg';
-      if (img.pathname.indexOf('/a/') > -1 ||
-        img.pathname.indexOf('/gallery/') > -1) {
+    'imgur.com': (types, img) => {
+      if (
+        img.pathname.includes('/a/')
+        || img.pathname.includes('/gallery/')
+      ) {
         return false;
       }
-      return rslashimg.getRealURL['i.imgur.com'](types, img);
+
+      return rslashimg.getRealURL['i.imgur.com'](types, {
+        ...img,
+        host: 'i.imgur.com',
+        pathname: `${img.pathname}.jpg`,
+      });
     },
-    'i.imgur.com': function (types, img) {
-      img.protocol = 'http:';
-      img.search = '';
-      return img;
-    },
-    default: function (types, img) {
-      var type = path.extname(img.pathname).replace('.', '');
-      if (types.indexOf(type) < 0 || img.protocol === 'https:') {
+    'i.imgur.com': (types, img) => ({
+      ...img,
+      protocol: 'http:',
+      search: '',
+    }),
+    default(types, img) {
+      const type = path.extname(img.pathname).replace('.', '');
+      if (!types.includes(type) || img.protocol === 'https:') {
         return false;
       }
       return img;
@@ -100,60 +104,57 @@ rslashimg = {
     dir: './',
     // subreddit: 'earthporn', // is a required option
   },
-  scrape: function (options, next) {
+  scrape(options, next) {
     reddit.r(options.subreddit).sort(options.sort).limit(options.number)
-    .exe(function (err, data) {
-      if (err) {
-        next(err);
-        return;
-      }
+      .exe((err, data) => {
+        if (err) {
+          next(err);
+          return;
+        }
 
-      data = data.data.children.map(function (child) {
-        return child.data.url;
+        const childrenData = data.data.children.map((child) => child.data.url);
+
+        next(null, childrenData);
       });
-
-      next(null, data);
-    });
   },
-  pull: function (options, cb) {
-    cb = cb || function () {};
+  pull(options, cb) {
     log('\n\n');
 
     async.waterfall([
-      rslashimg.scrape.bind(null, options),
-      function (images, next) {
+      (next) => rslashimg.scrape(options, next),
+      (images, next) => {
         if (!images || !images.length) {
           next(new Error('No images selected'));
           return;
         }
 
-        images = images.map(function (imageURL) {
-          var getURL;
-          imageURL = url.parse(imageURL);
-          getURL = rslashimg.getRealURL[imageURL.hostname] || rslashimg.getRealURL.default;
-          return getURL(options.types, imageURL);
-        }).filter(function (imageURL) {
-          return imageURL;
-        });
+        const urls = images.map((imageUrl) => {
+          const parsed = url.parse(imageUrl);
+          const method = rslashimg.getRealURL[parsed.hostname] || rslashimg.getRealURL.default;
+          return method(options.types, parsed);
+        }).filter(Boolean);
 
-        log('\nDownloading %d images to %s', images.length, options.dir);
+        log('\nDownloading %d images to %s', urls.length, options.dir);
 
-        next(null, images);
+        next(null, urls);
       },
-      download.bind(null, options.dir),
-      function (paths, next) {
+      (images, next) => fs.mkdir(options.dir, { recursive: true }, (err) => next(err, images)),
+      (images, next) => download(options.dir, images, next),
+      (paths, next) => {
         log('\nDownload of all images finished');
 
         if (options.width > 0 && options.height > 0) {
           log('\nValidating image resolutions');
-          async.map(paths, imageSize, function (err, sizes) {
+          async.map(paths, imageSize, (err, sizes) => {
             if (err) {
               next(err);
               return;
             }
-            paths.forEach(function (p, index) {
-              if (sizes[index].width < options.width ||
-                  sizes[index].height < options.height) {
+            paths.forEach((p, index) => {
+              if (
+                sizes[index].width < options.width
+                || sizes[index].height < options.height
+              ) {
                 log('Deleted ', p);
                 fs.unlinkSync(p);
               }
@@ -164,18 +165,16 @@ rslashimg = {
           next();
         }
       },
-    ], function (err) {
+    ], (err) => {
       if (err) {
         console.error(err);
-        cb(err);
+        if (cb) { cb(err); }
         return;
       }
       log('\nDone. Enjoy your images!');
-      cb();
+      if (cb) { cb(); }
     });
   },
 };
-
-log = rslashimg.log || console.log.bind(console);
 
 module.exports = rslashimg;
